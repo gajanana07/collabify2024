@@ -238,6 +238,7 @@ class _FeedScreenState extends State<FeedScreen> {
                       likes: post['likes'],
                       comments: post['comments'],
                       onLike: () => _likePost(post.id),
+                      likedBy: [],
                     );
                   },
                 );
@@ -388,7 +389,7 @@ class _CommentsScreenState extends State<CommentsScreen> {
   }
 }
 
-class PostItem extends StatelessWidget {
+class PostItem extends StatefulWidget {
   final String postId;
   final String username;
   final String userProfileUrl;
@@ -396,8 +397,8 @@ class PostItem extends StatelessWidget {
   final String text;
   final String? imageUrl;
   final int likes;
+  final List<dynamic> likedBy;
   final List<dynamic> comments;
-  final VoidCallback onLike;
 
   PostItem({
     required this.postId,
@@ -407,9 +408,57 @@ class PostItem extends StatelessWidget {
     required this.text,
     this.imageUrl,
     required this.likes,
+    required this.likedBy,
     required this.comments,
-    required this.onLike,
+    required Future<void> Function() onLike,
   });
+
+  @override
+  _PostItemState createState() => _PostItemState();
+}
+
+class _PostItemState extends State<PostItem> {
+  bool _isLiked = false;
+  int _likes = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _isLiked = widget.likedBy.contains(FirebaseAuth.instance.currentUser!.uid);
+    _likes = widget.likes;
+  }
+
+  Future<void> _toggleLike() async {
+    final userId = FirebaseAuth.instance.currentUser!.uid;
+
+    if (_isLiked) {
+      // Unlike the post
+      await FirebaseFirestore.instance
+          .collection('posts')
+          .doc(widget.postId)
+          .update({
+        'likes': FieldValue.increment(-1),
+        'likedBy': FieldValue.arrayRemove([userId]),
+      });
+      setState(() {
+        _isLiked = false;
+        _likes -= 1;
+      });
+    } else {
+      // Like the post
+      await FirebaseFirestore.instance
+          .collection('posts')
+          .doc(widget.postId)
+          .update({
+        'likes': FieldValue.increment(1),
+        'likedBy': FieldValue.arrayUnion([userId]),
+      });
+      setState(() {
+        _isLiked = true;
+        _likes += 1;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -419,15 +468,15 @@ class PostItem extends StatelessWidget {
         children: [
           ListTile(
             leading: CircleAvatar(
-              backgroundImage: NetworkImage(userProfileUrl),
+              backgroundImage: NetworkImage(widget.userProfileUrl),
             ),
-            title: Text('$username @$username'),
-            subtitle: Text('$timestamp\n\n$text'),
+            title: Text('${widget.username} @${widget.username}'),
+            subtitle: Text('${widget.timestamp}\n\n${widget.text}'),
           ),
-          if (imageUrl != null)
+          if (widget.imageUrl != null)
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Image.network(imageUrl!),
+              child: Image.network(widget.imageUrl!),
             ),
           ButtonBar(
             alignment: MainAxisAlignment.spaceBetween,
@@ -435,20 +484,24 @@ class PostItem extends StatelessWidget {
               Row(
                 children: [
                   IconButton(
-                    icon: Icon(Icons.thumb_up_alt_outlined),
-                    onPressed: onLike,
+                    icon: Icon(
+                      _isLiked ? Icons.thumb_up : Icons.thumb_up_alt_outlined,
+                      color: _isLiked ? Colors.blue : null,
+                    ),
+                    onPressed: _toggleLike,
                   ),
-                  Text('$likes'),
+                  Text('$_likes'),
                 ],
               ),
               IconButton(
                 icon: Icon(Icons.chat_bubble_outline),
                 onPressed: () {
-                  // Navigate to comment screen or show comment dialog
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => CommentsScreen(postId: postId)),
+                      builder: (context) =>
+                          CommentsScreen(postId: widget.postId),
+                    ),
                   );
                 },
               ),

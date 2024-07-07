@@ -7,6 +7,7 @@ import 'package:classico/onboard.dart';
 import 'package:classico/profile1.dart';
 import 'package:classico/search3.dart';
 import 'package:classico/signup.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
@@ -32,11 +33,30 @@ class MyApp extends StatelessWidget {
               primarySwatch: Colors.blue,
               visualDensity: VisualDensity.adaptivePlatformDensity,
             ),
-            home: LoginScreen(),
+            home: AuthWrapper(),
           );
         } else {
           return CircularProgressIndicator();
         }
+      },
+    );
+  }
+}
+
+// ignore: non_constant_identifier_names
+class AuthWrapper extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return CircularProgressIndicator();
+        }
+        if (snapshot.hasData) {
+          return DashboardScreen(); // The screen you want to show when logged in
+        }
+        return LoginScreen(); // The login screen
       },
     );
   }
