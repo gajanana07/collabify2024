@@ -44,6 +44,7 @@ class _SearchScreenState extends State<SearchScreen> {
           'tags': data['tags'] ?? 'No tags',
           'timestamp': (data['timestamp'] as Timestamp?)?.toDate().toString() ??
               'No date',
+          'email': data['email'] ?? 'No email',
         };
       }).toList();
 
