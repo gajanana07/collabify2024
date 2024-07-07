@@ -53,16 +53,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
             'project_name': data['project_name'] ?? 'No title',
             'description': data['project_description'] ?? 'No description',
             'tags': data['project_tags'] ?? 'No tags',
-            'timestamp': (data['project_timestamp'] as Timestamp?)
-                    ?.toDate()
-                    .toString() ??
-                'No date',
+            'timestamp': (data['project_timestamp'] is Timestamp)
+                ? (data['project_timestamp'] as Timestamp).toDate().toString()
+                : 'No date',
             'email': data['email'] ?? 'No email',
           };
         }).toList();
 
         setState(() {
           _appliedProjects = projects;
+          print('Applied projects set: $_appliedProjects');
         });
       } else {
         print('User not logged in');
@@ -169,11 +169,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: ListView.builder(
                 itemCount: _appliedProjects.length,
                 itemBuilder: (context, index) {
+                  final project = _appliedProjects[index];
                   return GestureDetector(
                     onTap: () {
                       _onProjectTapped(index);
                     },
-                    child: ProjectCard(project: _appliedProjects[index]),
+                    child: ProjectCard(project: project),
                   );
                 },
               ),
