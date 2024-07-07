@@ -3,7 +3,8 @@ import 'package:classico/message1.dart';
 import 'package:classico/profile1.dart';
 import 'package:flutter/material.dart';
 import 'package:classico/search.dart';
-import 'dashboard2.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 void main() {
   runApp(MyApp());
@@ -25,18 +26,76 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
+  List<Map<String, dynamic>> _appliedProjects = [];
+  String _userName = '';
 
-  final List<Project> projects = [
-    Project(name: 'Book Store-Frontend', author: 'Anthony', status: 'Active'),
-    Project(
-        name: 'Car Logo-Graphic Design',
-        author: 'Ramkumar Verma',
-        status: 'Active'),
-    Project(name: 'Art Gallery-App Dev', author: 'Raj', status: 'Active'),
-    Project(
-        name: 'BMS Utsav- Poster Making', author: 'Shwetha', status: 'Active'),
-    Project(name: 'BMS- Web Dev', author: 'Amol Rio', status: 'Pending'),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchAppliedProjectsFromFirestore();
+    _fetchUserNameFromFirestore();
+  }
+
+  void _fetchAppliedProjectsFromFirestore() async {
+    try {
+      final User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        print('Fetching applied projects for user: ${user.email}');
+        final QuerySnapshot snapshot = await FirebaseFirestore.instance
+            .collection('applied_projects')
+            .where('email', isEqualTo: user.email)
+            .get();
+
+        final List<Map<String, dynamic>> projects = snapshot.docs.map((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          print('Fetched project: $data');
+          return {
+            'project_name': data['project_name'] ?? 'No title',
+            'description': data['project_description'] ?? 'No description',
+            'tags': data['project_tags'] ?? 'No tags',
+            'timestamp': (data['project_timestamp'] as Timestamp?)
+                    ?.toDate()
+                    .toString() ??
+                'No date',
+            'email': data['email'] ?? 'No email',
+          };
+        }).toList();
+
+        setState(() {
+          _appliedProjects = projects;
+        });
+      } else {
+        print('User not logged in');
+      }
+    } catch (e) {
+      print('Error fetching applied projects from Firestore: $e');
+      // Handle error appropriately here
+    }
+  }
+
+  void _fetchUserNameFromFirestore() async {
+    try {
+      final User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        print('Fetching user name for user: ${user.uid}');
+        final DocumentSnapshot snapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        final data = snapshot.data() as Map<String, dynamic>;
+        print('Fetched user data: $data');
+        setState(() {
+          _userName = data['firstName'] ?? 'Unknown';
+        });
+      } else {
+        print('User not logged in');
+      }
+    } catch (e) {
+      print('Error fetching user name from Firestore: $e');
+      // Handle error appropriately here
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -57,7 +116,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           context,
           MaterialPageRoute(builder: (context) => AddProjectPage()),
         );
-        // Handle add action here
         break;
       case 3:
         Navigator.push(
@@ -68,14 +126,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     onItemTapped: _onItemTapped,
                   )),
         );
-        // Handle message action here
         break;
       case 4:
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => ProfileScreen()),
         );
-        // Handle profile action here
         break;
     }
   }
@@ -84,7 +140,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => MyDashboardPage(title: projects[index].name),
+        builder: (context) =>
+            ProjectDetailsScreen(project: _appliedProjects[index]),
       ),
     );
   }
@@ -93,7 +150,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Welcome, Rajesh!'),
+        title: Text('Welcome, $_userName!'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -103,21 +160,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Active projects',
+                  'Applied Projects',
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             Expanded(
               child: ListView.builder(
-                itemCount: projects.length,
+                itemCount: _appliedProjects.length,
                 itemBuilder: (context, index) {
                   return GestureDetector(
                     onTap: () {
-                      _onProjectTapped(
-                          index); // Navigate to dashboard2.dart when project is tapped
+                      _onProjectTapped(index);
                     },
-                    child: ProjectCard(project: projects[index]),
+                    child: ProjectCard(project: _appliedProjects[index]),
                   );
                 },
               ),
@@ -129,45 +185,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
-            label: '', // Set label to an empty string
+            label: '',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.search),
-            label: '', // Set label to an empty string
+            label: '',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.add),
-            label: '', // Set label to an empty string
+            label: '',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.message),
-            label: '', // Set label to an empty string
+            label: '',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
-            label: '', // Set label to an empty string
+            label: '',
           ),
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        selectedItemColor: Color(0xFF009FFF), // selected item color
-        unselectedItemColor: Colors.grey, // unselected item color
-        type: BottomNavigationBarType.fixed, // to show all items
+        selectedItemColor: Color(0xFF009FFF),
+        unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
       ),
     );
   }
 }
 
-class Project {
-  final String name;
-  final String author;
-  final String status;
-
-  Project({required this.name, required this.author, required this.status});
-}
-
 class ProjectCard extends StatelessWidget {
-  final Project project;
+  final Map<String, dynamic> project;
 
   ProjectCard({required this.project});
 
@@ -176,9 +224,58 @@ class ProjectCard extends StatelessWidget {
     return Card(
       margin: EdgeInsets.symmetric(vertical: 8.0),
       child: ListTile(
-        title: Text(project.name),
-        subtitle: Text(project.author),
-        trailing: Text(project.status),
+        title: Text(project['project_name']),
+        subtitle: Text(project['description']),
+        trailing: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(project['tags']),
+            Text(project['timestamp']),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ProjectDetailsScreen extends StatelessWidget {
+  final Map<String, dynamic> project;
+
+  ProjectDetailsScreen({required this.project});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(project['project_name'] ?? 'No title'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Description',
+              style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 16.0),
+            Text(project['description'] ?? 'No description'),
+            SizedBox(height: 16.0),
+            Text(
+              'Skills Required',
+              style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 16.0),
+            Text(project['tags'] ?? 'No tags'),
+            SizedBox(height: 16.0),
+            Text(
+              'Posted On',
+              style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 16.0),
+            Text(project['timestamp'] ?? 'No date'),
+          ],
+        ),
       ),
     );
   }
