@@ -13,6 +13,7 @@ class UserService {
         'email': email,
         'imageUrl': imageUrl,
       });
+      print(imageUrl);
     } catch (e) {
       print(e.toString());
     }

@@ -43,16 +43,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _fetchUserData();
+    //_fetchUserNameFromFirestore();
   }
+
+  String _userName = '';
+  String _profileImageUrl = '';
 
   void _fetchUserData() async {
     _user = FirebaseAuth.instance.currentUser;
     if (_user != null) {
+      _userDataFuture = _userService.getUser(_user!.uid);
+      final DocumentSnapshot snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_user?.uid)
+          .get();
+
+      final data = snapshot.data() as Map<String, dynamic>;
+      print('Fetched user data: $data');
+      print('Fetched user data: $data');
       setState(() {
-        _userDataFuture = _userService.getUser(_user!.uid);
+        _profileImageUrl =
+            data['imageUrl'] ?? ''; // Assign imageUrl to _profileImageUrl
       });
     }
   }
+
+  /*String _userName = '';
+
+  void _fetchUserNameFromFirestore() async {
+    try {
+      final User? _user = FirebaseAuth.instance.currentUser;
+      if (_user != null) {
+        print('Fetching user name for user: ${_user.uid}');
+        final DocumentSnapshot snapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(_user.uid)
+            .get();
+
+        final data = snapshot.data() as Map<String, dynamic>;
+        print('Fetched user data: $data');
+        setState(() {
+          _userName = data['firstName'] ?? 'Unknown';
+        });
+      } else {
+        print('User not logged in');
+      }
+    } catch (e) {
+      print('Error fetching user name from Firestore: $e');
+      // Handle error appropriately here
+    }
+  }*/
 
   void _onItemTapped(int index) {
     setState(() {
@@ -186,10 +226,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: <Widget>[
-                              if (userData['profilePicture'] != null &&
-                                  userData['profilePicture'].isNotEmpty)
+                              if (_profileImageUrl.isNotEmpty)
                                 CachedNetworkImage(
-                                  imageUrl: userData['profilePicture'],
+                                  imageUrl: _profileImageUrl,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator(),
                                   errorWidget: (context, url, error) =>

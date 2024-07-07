@@ -7,11 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:classico/search.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-<<<<<<< HEAD
 import 'package:intl/intl.dart';
-=======
 import 'package:url_launcher/url_launcher.dart';
->>>>>>> a654403554b960edfc35b045ca4e899a769120af
 
 void main() {
   runApp(MyApp());
