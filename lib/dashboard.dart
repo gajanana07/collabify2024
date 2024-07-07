@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:classico/search.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 
 void main() {
   runApp(MyApp());
@@ -53,9 +54,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             'project_name': data['project_name'] ?? 'No title',
             'description': data['project_description'] ?? 'No description',
             'tags': data['project_tags'] ?? 'No tags',
-            'timestamp': (data['project_timestamp'] is Timestamp)
-                ? (data['project_timestamp'] as Timestamp).toDate().toString()
-                : 'No date',
+            'timestamp':
+                data['project_timestamp'], // Directly store the Timestamp
             'email': data['email'] ?? 'No email',
           };
         }).toList();
@@ -222,6 +222,14 @@ class ProjectCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String formattedDate = 'No date';
+    if (project['timestamp'] is String) {
+      String timestampStr = project['timestamp'] as String;
+      // Extract the date portion from the timestamp string
+      formattedDate = timestampStr.split(' ')[0];
+    } else {
+      print("Timestamp is not a valid String: ${project['timestamp']}");
+    }
     return Card(
       margin: EdgeInsets.symmetric(vertical: 8.0),
       child: ListTile(
@@ -231,7 +239,7 @@ class ProjectCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(project['tags']),
-            Text(project['timestamp']),
+            Text(formattedDate),
           ],
         ),
       ),

@@ -48,7 +48,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _fetchUserData() async {
     _user = FirebaseAuth.instance.currentUser;
     if (_user != null) {
-      _userDataFuture = _userService.getUser(_user!.uid);
+      setState(() {
+        _userDataFuture = _userService.getUser(_user!.uid);
+      });
     }
   }
 
@@ -98,7 +100,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Log Out'),
-          content: Text('Are you sure you wanna log out?'),
+          content: Text('Are you sure you want to log out?'),
           actions: <Widget>[
             TextButton(
               onPressed: () {
@@ -136,11 +138,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
           return Center(child: CircularProgressIndicator());
         }
         var documents = snapshot.data!.docs;
+        print('Fetched documents: ${documents.length}');
+        for (var doc in documents) {
+          print('Document data: ${doc.data()}');
+        }
         return ListView.builder(
           shrinkWrap: true,
           itemCount: documents.length,
           itemBuilder: (context, index) {
             var data = documents[index].data() as Map<String, dynamic>;
+            print('Building ListTile for: $data');
             return ListTile(
               title: Text(data['project_name'] ?? 'No Project Name'),
               subtitle: Text(data['description'] ?? 'No Description'),
