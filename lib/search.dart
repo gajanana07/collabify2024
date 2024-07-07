@@ -3,6 +3,8 @@ import 'package:classico/dashboard.dart';
 import 'package:classico/message1.dart';
 import 'package:classico/profile1.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -42,6 +44,7 @@ class _SearchScreenState extends State<SearchScreen> {
           'tags': data['tags'] ?? 'No tags',
           'timestamp': (data['timestamp'] as Timestamp?)?.toDate().toString() ??
               'No date',
+          'email': data['email'] ?? 'No email',
         };
       }).toList();
 
@@ -377,6 +380,44 @@ class JobPostScreen extends StatelessWidget {
     }
   }
 
+  Future<void> _applyForProject() async {
+    final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+    final CollectionReference _appliedProjectsCollection =
+        _firestore.collection('applied_projects');
+
+    final User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final String uid = user.uid;
+      final DocumentSnapshot userData =
+          await _firestore.collection('users').doc(uid).get();
+
+      if (userData.exists) {
+        final String firstName = userData['firstName'];
+        final String email = userData['email'];
+
+        final Map<String, dynamic> applicationData = {
+          'first_name': firstName,
+          'email': email,
+          'project_name': project['project_name'],
+          'project_description': project['description'],
+          'project_tags': project['tags'],
+          'project_timestamp': project['timestamp'],
+        };
+
+        try {
+          await _appliedProjectsCollection.add(applicationData);
+          print('Application data added to applied_projects collection');
+        } catch (e) {
+          print('Error adding application data: $e');
+        }
+      } else {
+        print('User data not found');
+      }
+    } else {
+      print('User not logged in');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -420,13 +461,14 @@ class JobPostScreen extends StatelessWidget {
             SizedBox(height: 32.0),
             Center(
               child: ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   final String email = project['email'] ?? '';
                   final String subject =
                       'Application for Project: ${project['project_name'] ?? ''}';
                   final String body =
                       'I would love to work with you on this project.';
 
+                  await _applyForProject();
                   _launchGmail(toEmail: email, subject: subject, body: body);
                 },
                 child: Text('Apply for job'),
