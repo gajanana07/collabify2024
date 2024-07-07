@@ -1,3 +1,5 @@
+// dashboard.dart
+
 import 'package:classico/addProject.dart';
 import 'package:classico/message1.dart';
 import 'package:classico/profile1.dart';
@@ -5,7 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:classico/search.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+<<<<<<< HEAD
 import 'package:intl/intl.dart';
+=======
+import 'package:url_launcher/url_launcher.dart';
+>>>>>>> a654403554b960edfc35b045ca4e899a769120af
 
 void main() {
   runApp(MyApp());
@@ -146,6 +152,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Future<void> _sendWorkViaGmail(
+      String email, String subject, String body) async {
+    final Uri gmailUri = Uri(
+      scheme: 'https',
+      path: 'ail.google.com/mail/u/0/',
+      queryParameters: {
+        'view': 'cm',
+        'fs': '1',
+        'to': email,
+        'u': subject,
+        'body': body,
+      },
+    );
+
+    if (await canLaunch(gmailUri.toString())) {
+      await launch(gmailUri.toString());
+    } else {
+      throw 'Could not launch $gmailUri';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -252,6 +279,27 @@ class ProjectDetailsScreen extends StatelessWidget {
 
   ProjectDetailsScreen({required this.project});
 
+  Future<void> _sendWorkViaGmail(
+      String email, String subject, String body) async {
+    final Uri gmailUri = Uri(
+      scheme: 'https',
+      path: 'mail.google.com/mail/u/0/',
+      queryParameters: {
+        'view': 'cm',
+        'fs': '1',
+        'to': email,
+        'su': subject,
+        'body': body,
+      },
+    );
+
+    if (await canLaunch(gmailUri.toString())) {
+      await launch(gmailUri.toString());
+    } else {
+      throw 'Could not launch $gmailUri';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -283,6 +331,25 @@ class ProjectDetailsScreen extends StatelessWidget {
             ),
             SizedBox(height: 16.0),
             Text(project['timestamp'] ?? 'No date'),
+            SizedBox(height: 32.0),
+            Center(
+              child: ElevatedButton(
+                onPressed: () async {
+                  final String email = project['email'] ?? '';
+                  final String subject =
+                      'Application for Project: ${project['project_name'] ?? ''}';
+                  final String body =
+                      'Here are the files which youve asked for';
+
+                  await _sendWorkViaGmail(email, subject, body);
+                },
+                child: Text('Send Your Work'),
+                style: ElevatedButton.styleFrom(
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
+                ),
+              ),
+            ),
           ],
         ),
       ),
