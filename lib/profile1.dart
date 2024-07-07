@@ -1,10 +1,12 @@
 import 'package:classico/addProject.dart';
 import 'package:classico/dashboard.dart';
+import 'package:classico/login.dart';
 import 'package:classico/message1.dart';
 import 'package:classico/profile1.dart';
 import 'package:classico/profile2.dart';
 import 'package:classico/search.dart';
 import 'package:classico/search3.dart';
+import 'package:classico/signup.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -35,6 +37,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   User? _user;
   Future<Map<String, dynamic>>? _userDataFuture;
   int _selectedIndex = 0;
+  String _selectedOption = 'Applied Projects';
 
   @override
   void initState() {
@@ -89,11 +92,76 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Log Out'),
+          content: Text('Are you sure you wanna log out?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                await FirebaseAuth.instance.signOut();
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => SignUpScreen()),
+                  (Route<dynamic> route) => false,
+                );
+              },
+              child: Text('Ok'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildProjectDetails() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection(_selectedOption == 'Applied Projects'
+              ? 'applied_projects'
+              : 'projects')
+          .where('email', isEqualTo: _user?.email)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return Center(child: CircularProgressIndicator());
+        }
+        var documents = snapshot.data!.docs;
+        return ListView.builder(
+          shrinkWrap: true,
+          itemCount: documents.length,
+          itemBuilder: (context, index) {
+            var data = documents[index].data() as Map<String, dynamic>;
+            return ListTile(
+              title: Text(data['project_name'] ?? 'No Project Name'),
+              subtitle: Text(data['description'] ?? 'No Description'),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Profile'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: _showLogoutDialog,
+          ),
+        ],
       ),
       body: _userDataFuture != null
           ? FutureBuilder<Map<String, dynamic>>(
@@ -143,6 +211,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             userData['description'] ?? 'No Description',
                             style: TextStyle(fontSize: 16),
                           ),
+                          SizedBox(height: 20),
+                          DropdownButton<String>(
+                            value: _selectedOption,
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                _selectedOption = newValue!;
+                              });
+                            },
+                            items: <String>[
+                              'Applied Projects',
+                              'Uploaded Projects'
+                            ].map<DropdownMenuItem<String>>((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                          ),
+                          _buildProjectDetails(),
                         ],
                       ),
                     );
