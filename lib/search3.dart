@@ -58,7 +58,7 @@ class _ApplicationFormState extends State<ApplicationForm> {
         Navigator.push(
           context,
           MaterialPageRoute(
-              builder: (context) => MessagesScreen(
+              builder: (context) => FeedScreen(
                     selectedIndex: _selectedIndex,
                     onItemTapped: _onItemTapped,
                   )),

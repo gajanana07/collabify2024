@@ -130,7 +130,7 @@ class _SearchScreenState extends State<SearchScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-              builder: (context) => MessagesScreen(
+              builder: (context) => FeedScreen(
                     selectedIndex: _selectedIndex,
                     onItemTapped: _onItemTapped,
                   )),

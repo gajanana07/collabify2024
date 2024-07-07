@@ -3,22 +3,25 @@ import 'package:classico/dashboard.dart';
 import 'package:classico/message1.dart';
 import 'package:classico/message2.dart';
 import 'package:classico/profile1.dart';
+import 'package:classico/search.dart';
 import 'package:classico/search3.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'search.dart';
 
-class MessagesScreen extends StatefulWidget {
+class FeedScreen extends StatefulWidget {
   final int selectedIndex;
   final Function(int) onItemTapped;
 
-  MessagesScreen({required this.selectedIndex, required this.onItemTapped});
+  FeedScreen({required this.selectedIndex, required this.onItemTapped});
 
   @override
-  _MessagesScreenState createState() => _MessagesScreenState();
+  _FeedScreenState createState() => _FeedScreenState();
 }
 
-class _MessagesScreenState extends State<MessagesScreen> {
+class _FeedScreenState extends State<FeedScreen> {
+  final _textController = TextEditingController();
+
   void _onItemTapped(int index) {
     widget.onItemTapped(index); // Call the parent function to handle navigation
 
@@ -44,7 +47,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
         // Handle add action here
         break;
       case 3:
-
         // Handle message action here
         break;
       case 4:
@@ -62,95 +64,51 @@ class _MessagesScreenState extends State<MessagesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Messages'),
+        title: Text('Feed'),
       ),
-      body: ListView(
+      body: Column(
         children: [
-          MessageTile(
-            name: 'Rajkumar',
-            message: 'Nice! Sorry for the spelling...',
-            imageUrl:
-                'https://via.placeholder.com/150', // Replace with actual image URL
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) =>
-                        ChatScreen()), // Navigate to ChatScreen
-              );
-            },
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _textController,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      hintText: 'Write something...',
+                    ),
+                  ),
+                ),
+                SizedBox(width: 10),
+                IconButton(
+                  icon: Icon(Icons.image),
+                  onPressed: () {
+                    // Handle image upload
+                  },
+                ),
+                SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: () {
+                    // Handle post submission
+                    if (_textController.text.isNotEmpty) {
+                      // Post the text
+                      _textController.clear();
+                    }
+                  },
+                  child: Text('Post'),
+                ),
+              ],
+            ),
           ),
-          MessageTile(
-            name: 'Niyathi',
-            message: 'http://www.werephrase.com',
-            imageUrl:
-                'https://via.placeholder.com/150', // Replace with actual image URL
-            isHighlighted: true,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) =>
-                        ChatScreen()), // Navigate to ChatScreen
-              );
-            },
-          ),
-          MessageTile(
-            name: 'Mohan',
-            message: 'Hope it will work in the week...',
-            imageUrl:
-                'https://via.placeholder.com/150', // Replace with actual image URL
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) =>
-                        ChatScreen()), // Navigate to ChatScreen
-              );
-            },
-          ),
-          MessageTile(
-            name: 'Gayathri',
-            message: 'Thank you! It really shine with...',
-            imageUrl:
-                'https://via.placeholder.com/150', // Replace with actual image URL
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) =>
-                        ChatScreen()), // Navigate to ChatScreen
-              );
-            },
-          ),
-          MessageTile(
-            name: 'Tarun',
-            message: 'Yes I know',
-            imageUrl:
-                'https://via.placeholder.com/150', // Replace with actual image URL
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) =>
-                        ChatScreen()), // Navigate to ChatScreen
-              );
-            },
-          ),
-          MessageTile(
-            name: 'Anand',
-            message: 'It will be online in 2 days',
-            imageUrl:
-                'https://via.placeholder.com/150', // Replace with actual image URL
-            isHighlighted: true,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) =>
-                        ChatScreen()), // Navigate to ChatScreen
-              );
-            },
+          Expanded(
+            child: ListView.builder(
+              itemCount: 3, // Number of posts
+              itemBuilder: (context, index) {
+                return PostItem();
+              },
+            ),
           ),
         ],
       ),
@@ -187,32 +145,61 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 }
 
-class MessageTile extends StatelessWidget {
-  final String name;
-  final String message;
-  final String imageUrl;
-  final bool isHighlighted;
-  final VoidCallback onTap; // Add onTap callback
-
-  MessageTile({
-    required this.name,
-    required this.message,
-    required this.imageUrl,
-    this.isHighlighted = false,
-    required this.onTap, // Add onTap to constructor
-  });
-
+class PostItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: isHighlighted ? Colors.blue.shade100 : Colors.transparent,
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundImage: NetworkImage(imageUrl),
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Card(
+        child: Column(
+          children: [
+            ListTile(
+              leading: CircleAvatar(
+                backgroundImage: NetworkImage(
+                    'https://via.placeholder.com/150'), // Replace with user's profile image
+              ),
+              title: Text('Mariane @marianeee'),
+              subtitle: Text(
+                  '1/21/20\n\nCheck our new article “Top Icons Packs and Resources for Web”. You are in.'),
+            ),
+            ButtonBar(
+              alignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.chat_bubble_outline),
+                      onPressed: () {},
+                    ),
+                    Text('7'),
+                  ],
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.thumb_up_alt_outlined),
+                      onPressed: () {},
+                    ),
+                    Text('1'),
+                  ],
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.favorite_border),
+                      onPressed: () {},
+                    ),
+                    Text('3'),
+                  ],
+                ),
+                IconButton(
+                  icon: Icon(Icons.share),
+                  onPressed: () {},
+                ),
+              ],
+            ),
+          ],
         ),
-        title: Text(name),
-        subtitle: Text(message),
-        onTap: onTap, // Use onTap callback to navigate to ChatScreen
       ),
     );
   }
