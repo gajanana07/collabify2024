@@ -1,30 +1,36 @@
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class UserService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<void> createUser(
-      String uid, String name, String email, String imageUrl) async {
-    try {
-      await _firestore.collection('users').doc(uid).set({
-        'name': name,
-        'email': email,
-        'imageUrl': imageUrl,
-      });
-      print(imageUrl);
-    } catch (e) {
-      print(e.toString());
-    }
-  }
-
-  Future<DocumentSnapshot> getUser(String uid) async {
-    try {
-      return await _firestore.collection('users').doc(uid).get();
-    } catch (e) {
-      print(e.toString());
-      rethrow;
+  Future<Map<String, dynamic>> getUser(String uid) async {
+    DocumentSnapshot userData =
+        await _firestore.collection('users').doc(uid).get();
+    if (userData.exists) {
+      Map<String, dynamic> userDataMap =
+          userData.data() as Map<String, dynamic>;
+      String? profilePicture = userDataMap['profilePicture'];
+      if (profilePicture != null && profilePicture.isNotEmpty) {
+        try {
+          String downloadUrl = await _storage
+              .ref('user_images/$profilePicture')
+              .getDownloadURL();
+          userDataMap['profilePicture'] = downloadUrl;
+        } catch (e) {
+          // Handle errors like object not found
+          print("Error fetching image URL: $e");
+          userDataMap['profilePicture'] =
+              ''; // Set to an empty string or a default value
+        }
+      } else {
+        userDataMap['profilePicture'] =
+            ''; // Default value if profilePicture is null or empty
+      }
+      return userDataMap;
+    } else {
+      return {};
     }
   }
 }

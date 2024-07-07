@@ -43,7 +43,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _fetchUserData();
-    //_fetchUserNameFromFirestore();
   }
 
   String _userName = '';
@@ -60,39 +59,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       final data = snapshot.data() as Map<String, dynamic>;
       print('Fetched user data: $data');
-      print('Fetched user data: $data');
       setState(() {
         _profileImageUrl =
             data['imageUrl'] ?? ''; // Assign imageUrl to _profileImageUrl
       });
     }
   }
-
-  /*String _userName = '';
-
-  void _fetchUserNameFromFirestore() async {
-    try {
-      final User? _user = FirebaseAuth.instance.currentUser;
-      if (_user != null) {
-        print('Fetching user name for user: ${_user.uid}');
-        final DocumentSnapshot snapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(_user.uid)
-            .get();
-
-        final data = snapshot.data() as Map<String, dynamic>;
-        print('Fetched user data: $data');
-        setState(() {
-          _userName = data['firstName'] ?? 'Unknown';
-        });
-      } else {
-        print('User not logged in');
-      }
-    } catch (e) {
-      print('Error fetching user name from Firestore: $e');
-      // Handle error appropriately here
-    }
-  }*/
 
   void _onItemTapped(int index) {
     setState(() {
@@ -190,7 +162,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             print('Building ListTile for: $data');
             return ListTile(
               title: Text(data['project_name'] ?? 'No Project Name'),
-              subtitle: Text(data['description'] ?? 'No Description'),
+              subtitle: Text(data['project_tags'] ?? 'No Description'),
             );
           },
         );
@@ -226,17 +198,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: <Widget>[
-                              if (_profileImageUrl.isNotEmpty)
-                                CachedNetworkImage(
-                                  imageUrl: _profileImageUrl,
-                                  placeholder: (context, url) =>
-                                      CircularProgressIndicator(),
-                                  errorWidget: (context, url, error) =>
-                                      Icon(Icons.error),
-                                )
-                              else
-                                Icon(Icons.account_circle,
-                                    size: 100), // Default icon if no image
+                              CircleAvatar(
+                                radius: 50,
+                                backgroundImage: _profileImageUrl.isNotEmpty
+                                    ? CachedNetworkImageProvider(
+                                        _profileImageUrl)
+                                    : null,
+                                child: _profileImageUrl.isEmpty
+                                    ? Icon(Icons.account_circle, size: 100)
+                                    : null,
+                              ),
                               SizedBox(width: 20),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -275,6 +246,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               );
                             }).toList(),
                           ),
+                          SizedBox(height: 20), // Add this
                           _buildProjectDetails(),
                         ],
                       ),
@@ -320,39 +292,5 @@ class _ProfileScreenState extends State<ProfileScreen> {
         type: BottomNavigationBarType.fixed,
       ),
     );
-  }
-}
-
-class UserService {
-  final FirebaseStorage _storage = FirebaseStorage.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  Future<Map<String, dynamic>> getUser(String uid) async {
-    DocumentSnapshot userData =
-        await _firestore.collection('users').doc(uid).get();
-    if (userData.exists) {
-      Map<String, dynamic> userDataMap =
-          userData.data() as Map<String, dynamic>;
-      String? profilePicture = userDataMap['profilePicture'];
-      if (profilePicture != null && profilePicture.isNotEmpty) {
-        try {
-          String downloadUrl = await _storage
-              .ref('user_images/$profilePicture')
-              .getDownloadURL();
-          userDataMap['profilePicture'] = downloadUrl;
-        } catch (e) {
-          // Handle errors like object not found
-          print("Error fetching image URL: $e");
-          userDataMap['profilePicture'] =
-              ''; // Set to an empty string or a default value
-        }
-      } else {
-        userDataMap['profilePicture'] =
-            ''; // Default value if profilePicture is null or empty
-      }
-      return userDataMap;
-    } else {
-      return {};
-    }
   }
 }
