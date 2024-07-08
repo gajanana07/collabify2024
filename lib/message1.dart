@@ -196,10 +196,10 @@ class _FeedScreenState extends State<FeedScreen> {
                   ),
                 ),
                 SizedBox(width: 10),
-                IconButton(
+                /*IconButton(
                   icon: Icon(Icons.image),
                   onPressed: _pickImage,
-                ),
+                ),*/
                 SizedBox(width: 10),
                 ElevatedButton(
                   onPressed: () {
@@ -292,22 +292,43 @@ class CommentsScreen extends StatefulWidget {
 class _CommentsScreenState extends State<CommentsScreen> {
   final _commentController = TextEditingController();
   User? _user;
+  String? _firstName;
 
   @override
   void initState() {
     super.initState();
+    _fetchUserData();
     _user = FirebaseAuth.instance.currentUser;
+  }
+
+  Future<void> _fetchUserData() async {
+    _user = FirebaseAuth.instance.currentUser;
+    if (_user != null) {
+      final DocumentSnapshot snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_user!.uid)
+          .get();
+
+      final data = snapshot.data() as Map<String, dynamic>;
+      print('Fetched user data: $data');
+      setState(() {
+        _firstName = data['firstName'];
+
+        print(_firstName);
+      });
+    }
   }
 
   Future<void> _postComment() async {
     if (_commentController.text.isEmpty || _user == null) return;
 
+    print("this is in post comments : $_firstName");
     try {
       final commentData = {
         'text': _commentController.text,
         'timestamp': Timestamp.now(),
         'userId': _user!.uid,
-        'username': _user!.displayName ?? 'Anonymous',
+        'username': _firstName ?? 'Anonymous',
       };
 
       await FirebaseFirestore.instance
@@ -509,10 +530,10 @@ class _PostItemState extends State<PostItem> {
                 icon: Icon(Icons.favorite_border),
                 onPressed: () {},
               ),
-              IconButton(
+              /*IconButton(
                 icon: Icon(Icons.share),
                 onPressed: () {},
-              ),
+              ),*/
             ],
           ),
         ],
