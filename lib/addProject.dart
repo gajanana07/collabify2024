@@ -78,7 +78,7 @@ class AddProjectState extends State<AddProjectPage> {
     String projectName = _projectNameController.text;
     String description = _descriptionController.text;
     String tags = _tagsController.text;
-    String email = _emailController.text;
+    String client_email = _emailController.text;
 
     if (projectName.isEmpty || description.isEmpty || tags.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -92,7 +92,7 @@ class AddProjectState extends State<AddProjectPage> {
         'project_name': projectName,
         'description': description,
         'tags': tags,
-        'email': email,
+        'client_email': client_email,
         'timestamp': FieldValue.serverTimestamp(),
       });
       ScaffoldMessenger.of(context).showSnackBar(

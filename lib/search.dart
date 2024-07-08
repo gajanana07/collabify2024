@@ -355,6 +355,28 @@ class JobPostScreen extends StatelessWidget {
 
   const JobPostScreen({Key? key, required this.project}) : super(key: key);
 
+  Future<void> _sendWorkViaGmail(
+      String email, String subject, String body) async {
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: email,
+      queryParameters: {
+        'subject': subject,
+        'body': body,
+      },
+    );
+
+    try {
+      if (await canLaunch(emailUri.toString())) {
+        await launch(emailUri.toString());
+      } else {
+        throw 'Could not launch $emailUri';
+      }
+    } catch (e) {
+      print(e);
+    }
+  }
+
   void _launchGmail(
       {required String toEmail,
       required String subject,
@@ -469,7 +491,7 @@ class JobPostScreen extends StatelessWidget {
                       'I would love to work with you on this project.';
 
                   await _applyForProject();
-                  _launchGmail(toEmail: email, subject: subject, body: body);
+                  _sendWorkViaGmail(email, subject, body);
                 },
                 child: Text('Apply for job'),
                 style: ElevatedButton.styleFrom(

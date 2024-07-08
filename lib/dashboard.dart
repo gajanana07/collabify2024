@@ -59,7 +59,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             'tags': data['project_tags'] ?? 'No tags',
             'timestamp':
                 data['project_timestamp'], // Directly store the Timestamp
-            'email': data['email'] ?? 'No email',
+            'client_email':
+                data['client_email'] ?? 'No client email', // Add this line
+            'client_id': data['client_id'] ?? '', // Add this line
           };
         }).toList();
 
@@ -278,22 +280,23 @@ class ProjectDetailsScreen extends StatelessWidget {
 
   Future<void> _sendWorkViaGmail(
       String email, String subject, String body) async {
-    final Uri gmailUri = Uri(
-      scheme: 'https',
-      path: 'mail.google.com/mail/u/0/',
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: email,
       queryParameters: {
-        'view': 'cm',
-        'fs': '1',
-        'to': email,
-        'su': subject,
+        'subject': subject,
         'body': body,
       },
     );
 
-    if (await canLaunch(gmailUri.toString())) {
-      await launch(gmailUri.toString());
-    } else {
-      throw 'Could not launch $gmailUri';
+    try {
+      if (await canLaunch(emailUri.toString())) {
+        await launch(emailUri.toString());
+      } else {
+        throw 'Could not launch $emailUri';
+      }
+    } catch (e) {
+      print(e);
     }
   }
 
@@ -332,13 +335,14 @@ class ProjectDetailsScreen extends StatelessWidget {
             Center(
               child: ElevatedButton(
                 onPressed: () async {
-                  final String email = project['email'] ?? '';
+                  final String clientEmail = project['client_email'] ??
+                      ''; // Fetch client's email from project
                   final String subject =
                       'Application for Project: ${project['project_name'] ?? ''}';
                   final String body =
                       'Here are the files which youve asked for';
 
-                  await _sendWorkViaGmail(email, subject, body);
+                  await _sendWorkViaGmail(clientEmail, subject, body);
                 },
                 child: Text('Send Your Work'),
                 style: ElevatedButton.styleFrom(
